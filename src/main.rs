@@ -65,27 +65,45 @@ async fn main(_spawner: Spawner) {
 
     log::info!("Hello, burn!");
 
-    type Backend = NdArray<f32>; // TODO also try i32
+    type Backend = NdArray<f32>;
     let device = Default::default();
-    let mlp_config = MlpConfig::new();
-    let mnist_config = MnistConfig::new(mlp_config);
+    let mlp_config = MlpConfig {
+        num_layers: 2,
+        dropout: 0.2,
+        d_model: 64,
+    };
+    let mnist_config = MnistConfig {
+        seed: 42,
+        mlp: mlp_config,
+        input_size: 64,
+        output_size: 10,
+    };
     let mnist_model: Model<Backend> = Model::new(&mnist_config, &device);
 
     // Pass a fixed seed for random, otherwise a build generated random seed is used
     Backend::seed(mnist_config.seed);
 
     // Some random input
-    let input_shape = [1, 28, 28];
+    let input_shape = [1, 8, 8];
     let input = Tensor::<Backend, 3>::random(input_shape, Distribution::Default, &device);
 
-    let start = Instant::now();
+    let mut time_sum = 0;
 
-    // Run through the model
-    let output = mnist_model.forward(input);
+    const N: u64 = 30;
 
-    let stop = Instant::now();
+    for _ in 0..N {
+        let start = Instant::now();
+        let _output = mnist_model.forward(input.clone());
+        let stop = Instant::now();
+        let time = stop.duration_since(start).as_millis();
 
-    log::info!("Output: {:?}", output);
-    log::info!("Time: {:?}", stop.duration_since(start));
+        // log::info!("Output: {:?}", output);
+        log::info!("Time: {:?} ms", time);
+
+        time_sum += time;
+    }
+
+    log::info!("Average time: {:?} ms, estimated frequency: {:?} Hz", time_sum / N, 1000 / (time_sum / N));
+
 
 }

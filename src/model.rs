@@ -1,5 +1,3 @@
-// Originally copied from the burn/examples/mnist package
-
 use crate::{
     conv::{ConvBlock, ConvBlockConfig},
     mlp::{Mlp, MlpConfig},
